@@ -96,7 +96,7 @@ The notch width is detected via `NSScreen.auxiliaryTopLeftArea` / `auxiliaryTopR
 
 ## Known limitations
 
-- Hover hit area covers the full panel rect (including invisible regions below the collapsed shape). Fixable with `.contentShape(NotchShape(...))`.
+- The `NSPanel` still captures mouse events across its full rect (the invisible region below the collapsed notch shape). SwiftUI hover is constrained to the shape via `.contentShape`, but clicks in the invisible area are swallowed rather than passing through. Fixing that needs a custom `NSPanel` subclass overriding `hitTest(_:)` with the shape path.
 - Not reactive to screen parameter changes (external display plug/unplug, main screen swap). Needs `NSApplication.didChangeScreenParametersNotification` observer.
 - Ad-hoc signed → Gatekeeper warning on first launch, and `SMAppService` may require manual approval in System Settings → Login Items on first toggle.
 

@@ -61,6 +61,14 @@ struct NotchView: View {
                 .frame(width: contentWidth)
                 .foregroundStyle(.white)
             }
+            .frame(width: contentWidth, height: shapeHeight)
+            .contentShape(
+                NotchShape(
+                    notchWidth: notchWidth,
+                    notchHeight: notchHeight,
+                    bottomCornerRadius: expanded ? 16 : 8
+                )
+            )
             .animation(.spring(response: 0.4, dampingFraction: 0.82), value: expanded)
             .onHover { hovering in expanded = hovering }
 
