@@ -31,8 +31,9 @@ final class NotchWindowController {
         let notchWidth = computedNotchWidth(screen: screen)
         let notchHeight = max(screen.safeAreaInsets.top, 32)
         let sidePadding: CGFloat = 56
+        let expandedExtra: CGFloat = 180
         let panelWidth = notchWidth + sidePadding * 2
-        let panelHeight = notchHeight + 200
+        let panelHeight = notchHeight + expandedExtra + 20
 
         let x = screen.frame.midX - panelWidth / 2
         let y = screen.frame.maxY - panelHeight
@@ -54,13 +55,28 @@ final class NotchWindowController {
         p.hidesOnDeactivate = false
         p.ignoresMouseEvents = false
 
-        let host = NSHostingView(
-            rootView: NotchView(notchWidth: notchWidth, notchHeight: notchHeight)
-                .environmentObject(store)
+        let container = HitTestContainerView(
+            frame: NSRect(origin: .zero, size: rect.size),
+            notchWidth: notchWidth,
+            notchHeight: notchHeight,
+            expandedExtra: expandedExtra
         )
-        host.frame = NSRect(origin: .zero, size: rect.size)
+
+        let host = NSHostingView(
+            rootView: NotchView(
+                notchWidth: notchWidth,
+                notchHeight: notchHeight,
+                onExpandedChange: { [weak container] expanded in
+                    container?.isExpanded = expanded
+                }
+            )
+            .environmentObject(store)
+        )
+        host.frame = container.bounds
         host.autoresizingMask = [.width, .height]
-        p.contentView = host
+        container.addSubview(host)
+
+        p.contentView = container
 
         self.panel = p
     }

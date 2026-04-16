@@ -8,10 +8,12 @@ struct NotchView: View {
     let notchWidth: CGFloat
     let notchHeight: CGFloat
     let sidePadding: CGFloat = 56
+    var onExpandedChange: (Bool) -> Void = { _ in }
     private let notchGap: CGFloat = 8
+    private let expandedExtra: CGFloat = 180
 
     private var shapeHeight: CGFloat {
-        expanded ? notchHeight + 180 : notchHeight
+        expanded ? notchHeight + expandedExtra : notchHeight
     }
 
     private var contentWidth: CGFloat {
@@ -70,7 +72,10 @@ struct NotchView: View {
                 )
             )
             .animation(.spring(response: 0.4, dampingFraction: 0.82), value: expanded)
-            .onHover { hovering in expanded = hovering }
+            .onHover { hovering in
+                expanded = hovering
+                onExpandedChange(hovering)
+            }
 
             Spacer(minLength: 0)
         }

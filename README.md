@@ -80,6 +80,7 @@ Stats should populate within a second or two.
 |---|---|
 | `PlausibarApp.swift` | `@main` App, AppDelegate, Settings scene |
 | `NotchWindowController.swift` | Borderless non-activating `NSPanel` at the top of the screen, level above `mainMenu`, `canJoinAllSpaces + fullScreenAuxiliary` |
+| `HitTestContainerView.swift` | Custom `NSView` contentView — `hitTest(_:)` returns `nil` outside the currently-drawn shape so clicks below the collapsed strip pass through |
 | `NotchShape.swift` | SwiftUI `Shape` with an animatable notch cutout at top-center |
 | `NotchView.swift` | Collapsed / expanded states, hover-driven spring animation |
 | `PlausibleAPI.swift` | Stats API client — `/realtime/visitors` and `/stats/aggregate` |
@@ -96,7 +97,6 @@ The notch width is detected via `NSScreen.auxiliaryTopLeftArea` / `auxiliaryTopR
 
 ## Known limitations
 
-- The `NSPanel` still captures mouse events across its full rect (the invisible region below the collapsed notch shape). SwiftUI hover is constrained to the shape via `.contentShape`, but clicks in the invisible area are swallowed rather than passing through. Fixing that needs a custom `NSPanel` subclass overriding `hitTest(_:)` with the shape path.
 - Not reactive to screen parameter changes (external display plug/unplug, main screen swap). Needs `NSApplication.didChangeScreenParametersNotification` observer.
 - Ad-hoc signed → Gatekeeper warning on first launch, and `SMAppService` may require manual approval in System Settings → Login Items on first toggle.
 
