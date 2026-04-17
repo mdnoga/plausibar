@@ -6,6 +6,14 @@ final class NotchWindowController {
     private var panel: NSPanel?
     private let store: StatsStore
 
+    private var notchWidth: CGFloat = 0
+    private var notchHeight: CGFloat = 0
+    private var contentWidth: CGFloat = 0
+    private let expandedExtra: CGFloat = 180
+    private let collapseDelay: Duration = .milliseconds(420)
+
+    private var collapseTask: Task<Void, Never>?
+
     init(store: StatsStore) {
         self.store = store
     }
@@ -28,16 +36,12 @@ final class NotchWindowController {
     private func build() {
         guard let screen = NSScreen.main else { return }
 
-        let notchWidth = computedNotchWidth(screen: screen)
-        let notchHeight = max(screen.safeAreaInsets.top, 32)
+        notchWidth = computedNotchWidth(screen: screen)
+        notchHeight = max(screen.safeAreaInsets.top, 32)
         let sidePadding: CGFloat = 56
-        let expandedExtra: CGFloat = 180
-        let panelWidth = notchWidth + sidePadding * 2
-        let panelHeight = notchHeight + expandedExtra + 20
+        contentWidth = notchWidth + sidePadding * 2
 
-        let x = screen.frame.midX - panelWidth / 2
-        let y = screen.frame.maxY - panelHeight
-        let rect = NSRect(x: x, y: y, width: panelWidth, height: panelHeight)
+        let rect = frameRect(expanded: false, screen: screen)
 
         let p = NSPanel(
             contentRect: rect,
@@ -55,30 +59,49 @@ final class NotchWindowController {
         p.hidesOnDeactivate = false
         p.ignoresMouseEvents = false
 
-        let container = HitTestContainerView(
-            frame: NSRect(origin: .zero, size: rect.size),
-            notchWidth: notchWidth,
-            notchHeight: notchHeight,
-            expandedExtra: expandedExtra
-        )
-
         let host = NSHostingView(
             rootView: NotchView(
                 notchWidth: notchWidth,
                 notchHeight: notchHeight,
-                onExpandedChange: { [weak container] expanded in
-                    container?.isExpanded = expanded
+                onExpandedChange: { [weak self] expanded in
+                    self?.setExpanded(expanded)
                 }
             )
             .environmentObject(store)
         )
-        host.frame = container.bounds
+        host.frame = NSRect(origin: .zero, size: rect.size)
         host.autoresizingMask = [.width, .height]
-        container.addSubview(host)
-
-        p.contentView = container
+        p.contentView = host
 
         self.panel = p
+    }
+
+    private func setExpanded(_ expanded: Bool) {
+        collapseTask?.cancel()
+        if expanded {
+            applyFrame(expanded: true)
+        } else {
+            collapseTask = Task { [weak self] in
+                try? await Task.sleep(for: self?.collapseDelay ?? .milliseconds(420))
+                guard let self, !Task.isCancelled else { return }
+                self.applyFrame(expanded: false)
+            }
+        }
+    }
+
+    private func applyFrame(expanded: Bool) {
+        guard let panel, let screen = NSScreen.main else { return }
+        panel.setFrame(frameRect(expanded: expanded, screen: screen), display: true, animate: false)
+    }
+
+    private func frameRect(expanded: Bool, screen: NSScreen) -> NSRect {
+        let h = expanded ? notchHeight + expandedExtra : notchHeight
+        return NSRect(
+            x: screen.frame.midX - contentWidth / 2,
+            y: screen.frame.maxY - h,
+            width: contentWidth,
+            height: h
+        )
     }
 
     private func computedNotchWidth(screen: NSScreen) -> CGFloat {
